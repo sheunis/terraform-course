@@ -3,43 +3,34 @@ resource "aws_ecs_cluster" "example-cluster" {
   name = "example-cluster"
 }
 
-# resource "aws_launch_configuration" "ecs-example-launchconfig" {
-#   name_prefix          = "ecs-launchconfig"
-#   image_id             = var.ECS_AMIS[var.AWS_REGION]
-#   instance_type        = var.ECS_INSTANCE_TYPE
-#   key_name             = aws_key_pair.mykeypair.key_name
-#   iam_instance_profile = aws_iam_instance_profile.ecs-ec2-role.id
-#   security_groups      = [aws_security_group.ecs-securitygroup.id]
-#   user_data            = "#!/bin/bash\necho 'ECS_CLUSTER=example-cluster' > /etc/ecs/ecs.config\nstart ecs"
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
-
-# resource "aws_launch_template" "example-launch-template" { correct
-#   name_prefix   = "example-launchtemplate"
-#   image_id      = var.AMIS[var.AWS_REGION]
-#   instance_type = "t2.micro"
-#   key_name        = aws_key_pair.mykeypair.key_name
-#   vpc_security_group_ids = [aws_security_group.myinstance.id]
-#   user_data       = filebase64("${path.module}/scripts/init.sh")
-
-#   instance_initiated_shutdown_behavior = "terminate"
-# }
-
-resource "aws_launch_template" "example-launch-template" {
-  name_prefix   = "example-launchtemplate"
+resource "aws_launch_template" "ecs-example-launchconfig" {
+  name_prefix   = "ecs-launchconfig"
   image_id      = var.ECS_AMIS[var.AWS_REGION]
   instance_type = var.ECS_INSTANCE_TYPE
   key_name        = aws_key_pair.mykeypair.key_name
+  instance_initiated_shutdown_behavior = "terminate"
+
   iam_instance_profile {
-    name = aws_iam_instance_profile.ecs-ec2-role.name
+    name = aws_iam_instance_profile.ecs-ec2-role.id
   }
   vpc_security_group_ids = [aws_security_group.ecs-securitygroup.id]
-  #vpc_security_group_ids = [aws_security_group.myinstance.id]
-  user_data       = filebase64("${path.module}/scripts/init.sh")
+  user_data = base64encode("#!/bin/bash\necho 'ECS_CLUSTER=example-cluster' > /etc/ecs/ecs.config\nstart ecs")
 
-  instance_initiated_shutdown_behavior = "terminate"
+  credit_specification {
+    cpu_credits = "standard"
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name = "ecs-example"
+    }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_autoscaling_group" "ecs-example-autoscaling" {
