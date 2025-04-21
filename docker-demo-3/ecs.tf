@@ -40,7 +40,7 @@ resource "aws_autoscaling_group" "ecs-example-autoscaling" {
   max_size             = 1
 
   launch_template {
-    id = aws_launch_template.example-launch-template.id
+    id = aws_launch_template.ecs-example-launchconfig.id
     version = "$Latest"
   }
 
